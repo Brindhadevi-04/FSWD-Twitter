@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini Blog</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Georgia, serif;
+    background: #ffc0d2;
+    color: #333;
+}
+
+header {
+    background: #505153;
+    color: white;
+    text-align: center;
+    padding: 20px;
+}
+
+header h1 {
+    margin: 5px;
+    font-size: 28px;
+}
+
+header p {
+    font-size: 13px;
+}
+
+.container {
+    width: 90%;
+    max-width: 600px;
+    margin: 15px auto;
+}
+
+.card {
+    background: #fff;
+    padding: 15px;
+    margin-bottom: 12px;
+    border-radius: 5px;
+    box-shadow: 0 1px 4px #e6a9bb;
+}
+
+.login-card {
+    max-width: 760px;
+    margin: 15px auto;
+    padding: 25px 15px;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 9px;
+    margin: 5px 0;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-family: inherit;
+}
+
+textarea {
+    height: 45px;
+    resize: vertical;
+}
+
+button {
+    background: #303234;
+    color: white;
+    border: none;
+    padding: 7px 13px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #555;
+}
+
+.logout {
+    background: #c93636;
+    float: right;
+}
+
+.stats {
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+    margin-top: 15px;
+}
+
+.stats strong {
+    display: block;
+    margin-bottom: 7px;
+}
+
+.stats span {
+    font-size: 12px;
+}
+
+.post {
+    border: 1px solid #eee;
+    padding: 10px;
+    margin-top: 8px;
+    border-radius: 4px;
+    overflow-wrap: anywhere;
+}
+
+.hidden {
+    display: none;
+}
+
+.message {
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+@media(max-width: 480px) {
+    .container {
+        width: 94%;
+    }
+    .login-card {
+        width: 90%;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>Mini Blog</h1>
+    <p>Share your thoughts with others</p>
+</header>
+
+<!-- LOGIN SECTION -->
+<section id="loginSection" class="card login-card">
+    <h3>🔒 Login</h3>
+
+    <input id="loginUser" placeholder="Enter username">
+    <input id="loginPass" type="password" placeholder="Enter password">
+
+    <button onclick="login()">Login</button>
+    <p>Don't have an account? 
+        <button onclick="showRegister()">Register</button>
+    </p>
+    <p id="loginMessage" class="message"></p>
+</section>
+
+<!-- REGISTER SECTION -->
+<section id="registerSection" class="card login-card hidden">
+    <h3>📝 Register</h3>
+
+    <input id="regUser" placeholder="Enter username">
+    <input id="regPass" type="password" placeholder="Enter password">
+
+    <button onclick="register()">Register</button>
+    <button onclick="showLogin()">Back to Login</button>
+    <p id="regMessage" class="message"></p>
+</section>
+
+<!-- BLOG DASHBOARD -->
+<main id="dashboard" class="container hidden">
+
+    <section class="card">
+        <button class="logout" onclick="logout()">Logout</button>
+        <h3>👤 <span id="profileName"></span></h3>
+
+        <div class="stats">
+            <div>
+                <strong id="postCount">0</strong>
+                <span>📝 Posts</span>
+            </div>
+            <div>
+                <strong id="followingCount">0</strong>
+                <span>👥 Following</span>
+            </div>
+            <div>
+                <strong id="followerCount">0</strong>
+                <span>👤 Followers</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h3>✨ Express Yourself</h3>
+        <textarea id="postText" placeholder="Write your post"></textarea>
+        <button onclick="createPost()">Post</button>
+    </section>
+
+    <section class="card">
+        <h3>💛 Build Your Circle</h3>
+        <input id="followUser" placeholder="Enter username to follow">
+        <button onclick="follow()">Follow</button>
+        <p id="followMessage" class="message"></p>
+    </section>
+
+    <section class="card">
+        <h3>🌐 Explore the Feed</h3>
+        <div id="feed"></div>
+    </section>
+
+</main>
+
+<script>
+let users = {};
+let currentUser = "";
+let posts = [];
+let following = {};
+
+function showRegister() {
+    document.getElementById("loginSection").classList.add("hidden");
+    document.getElementById("registerSection").classList.remove("hidden");
+}
+
+function showLogin() {
+    document.getElementById("registerSection").classList.add("hidden");
+    document.getElementById("loginSection").classList.remove("hidden");
+}
+
+function register() {
+    let username = document.getElementById("regUser").value.trim();
+    let password = document.getElementById("regPass").value;
+
+    if (!username || !password) {
+        document.getElementById("regMessage").textContent =
+            "Please enter username and password.";
+        return;
+    }
+
+    if (users[username]) {
+        document.getElementById("regMessage").textContent =
+            "Username already exists!";
+        return;
+    }
+
+    users[username] = password;
+    following[username] = [];
+
+    document.getElementById("regMessage").textContent =
+        "Registration successful! Please login.";
+
+    document.getElementById("regUser").value = "";
+    document.getElementById("regPass").value = "";
+}
+
+function login() {
+    let username = document.getElementById("loginUser").value.trim();
+    let password = document.getElementById("loginPass").value;
+
+    if (users[username] && users[username] === password) {
+        currentUser = username;
+
+        document.getElementById("loginSection").classList.add("hidden");
+        document.getElementById("registerSection").classList.add("hidden");
+        document.getElementById("dashboard").classList.remove("hidden");
+
+        document.getElementById("profileName").textContent = currentUser;
+        renderFeed();
+        updateStats();
+    } else {
+        document.getElementById("loginMessage").textContent =
+            "Invalid username or password. Please register first.";
+    }
+}
+
+function logout() {
+    currentUser = "";
+    document.getElementById("dashboard").classList.add("hidden");
+    document.getElementById("loginSection").classList.remove("hidden");
+    document.getElementById("loginUser").value = "";
+    document.getElementById("loginPass").value = "";
+}
+
+function createPost() {
+    let text = document.getElementById("postText").value.trim();
+
+    if (!text) {
+        alert("Please write something before posting!");
+        return;
+    }
+
+    posts.unshift({
+        id: Date.now(),
+        username: currentUser,
+        text: text,
+        likes: []
+    });
+
+    document.getElementById("postText").value = "";
+    renderFeed();
+    updateStats();
+}
+
+function follow() {
+    let username = document.getElementById("followUser").value.trim();
+
+    if (!username || username === currentUser) {
+        document.getElementById("followMessage").textContent =
+            "Enter another user's username.";
+        return;
+    }
+
+    if (!users[username]) {
+        document.getElementById("followMessage").textContent =
+            "User not found. Register that user first.";
+        return;
+    }
+
+    if (following[currentUser].includes(username)) {
+        document.getElementById("followMessage").textContent =
+            "You are already following " + username;
+        return;
+    }
+
+    following[currentUser].push(username);
+    document.getElementById("followMessage").textContent =
+        "You are now following " + username;
+
+    document.getElementById("followUser").value = "";
+    updateStats();
+}
+
+function likePost(id) {
+    let post = posts.find(p => p.id === id);
+
+    if (!post.likes.includes(currentUser)) {
+        post.likes.push(currentUser);
+    } else {
+        post.likes = post.likes.filter(u => u !== currentUser);
+    }
+
+    renderFeed();
+}
+
+function renderFeed() {
+    let feed = document.getElementById("feed");
+    feed.innerHTML = "";
+
+    if (posts.length === 0) {
+        feed.textContent = "No posts yet. Be the first to share!";
+        return;
+    }
+
+    posts.forEach(post => {
+        let card = document.createElement("div");
+        card.className = "post";
+
+        let name = document.createElement("strong");
+        name.textContent = "@" + post.username;
+
+        let content = document.createElement("p");
+        content.textContent = post.text;
+
+        let like = document.createElement("button");
+        let liked = post.likes.includes(currentUser);
+        like.textContent = (liked ? "💗 Unlike " : "❤️ Like ") +
+                           post.likes.length;
+        like.onclick = () => likePost(post.id);
+
+        card.appendChild(name);
+        card.appendChild(content);
+        card.appendChild(like);
+        feed.appendChild(card);
+    });
+}
+
+function updateStats() {
+    document.getElementById("postCount").textContent =
+        posts.filter(p => p.username === currentUser).length;
+
+    document.getElementById("followingCount").textContent =
+        (following[currentUser] || []).length;
+
+    document.getElementById("followerCount").textContent =
+        Object.values(following).filter(list =>
+            list.includes(currentUser)
+        ).length;
+}
+</script>
+
+</body>
+</html>
